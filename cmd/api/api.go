@@ -10,11 +10,11 @@ import (
 type Application struct {
 	config Config
 	store  store.Storage
-	db     dbConfig
 }
 
 type Config struct {
 	addr string
+	db   dbConfig
 }
 
 type dbConfig struct {
