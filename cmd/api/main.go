@@ -2,17 +2,25 @@ package main
 
 import (
 	"log"
+	"os"
 	"socialApp/internal/store"
 	"socialApp/internal/store/db"
 
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
 
 func main() {
+	err := godotenv.Load("../../.env")
+
+	if err != nil {
+		log.Fatalf("Error loading .env file")
+	}
+
 	cfg := Config{
 		addr: ":8080",
 		db: dbConfig{
-			addr:         "postgres://social:social@localhost/social?sslmode=disable",
+			addr:         os.Getenv("DB_CONN"),
 			maxOpenConns: 30,
 			maxIdleConns: 30,
 			maxIdleTime:  "15m",
