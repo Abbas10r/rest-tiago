@@ -10,6 +10,8 @@ import (
 	_ "github.com/lib/pq"
 )
 
+const version = "0.0.1"
+
 func main() {
 	err := godotenv.Load("../../.env")
 
@@ -25,6 +27,7 @@ func main() {
 			maxIdleConns: 30,
 			maxIdleTime:  "15m",
 		},
+		env: "Development",
 	}
 
 	db, err := db.New(

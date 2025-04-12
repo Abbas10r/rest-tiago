@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"socialApp/internal/store"
 	"time"
+
+	"github.com/gorilla/mux"
 )
 
 type Application struct {
@@ -15,6 +17,7 @@ type Application struct {
 type Config struct {
 	addr string
 	db   dbConfig
+	env  string
 }
 
 type dbConfig struct {
@@ -24,15 +27,15 @@ type dbConfig struct {
 	maxIdleTime  string
 }
 
-func (app *Application) Mount() *http.ServeMux {
-	mux := http.NewServeMux()
-
-	mux.HandleFunc("GET /v1/health", app.HealthCheckHandler) //curl http://localhost:8080/v1/health
-
+func (app *Application) Mount() *mux.Router {
+	mux := mux.NewRouter()
+	mux.HandleFunc("/v1/health", app.HealthCheckHandler).Methods("GET") //curl http://localhost:8080/v1/health
+	mux.HandleFunc("/v1/posts", app.createPostHandler).Methods("POST")
+	mux.NewRoute()
 	return mux
 }
 
-func (app *Application) Run(mux *http.ServeMux) error {
+func (app *Application) Run(mux *mux.Router) error {
 
 	srv := &http.Server{
 		Addr:         app.config.addr,
