@@ -15,7 +15,7 @@ type CreatePostPayload struct {
 func (app *Application) createPostHandler(w http.ResponseWriter, r *http.Request) {
 	var payload CreatePostPayload
 	if err := readJson(w, r, &payload); err != nil {
-		writeJSONError(w, http.StatusBadRequest, err.Error())
+		app.badRequestError(w, r, err)
 		return
 	}
 	post := store.Post{
@@ -25,12 +25,12 @@ func (app *Application) createPostHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	if err := app.store.Posts.Create(r.Context(), &post); err != nil {
-		writeJSONError(w, http.StatusInternalServerError, err.Error())
+		app.internalServerError(w, r, err)
 		return
 	}
 
 	if err := writeJSON(w, http.StatusCreated, &post); err != nil {
-		writeJSONError(w, http.StatusInternalServerError, err.Error())
+		app.internalServerError(w, r, err)
 		return
 	}
 }
@@ -45,12 +45,12 @@ func (app *Application) getPostHandler(w http.ResponseWriter, r *http.Request) {
 
 	post, err := app.store.Posts.GetById(r.Context(), id)
 	if err != nil {
-		writeJSONError(w, http.StatusNotFound, err.Error())
+		app.notFound(w, r, err)
 		return
 	}
 
 	if err := writeJSON(w, http.StatusOK, post); err != nil {
-		writeJSONError(w, http.StatusInternalServerError, err.Error())
+		app.internalServerError(w, r, err)
 		return
 	}
 }
