@@ -8,8 +8,9 @@ import (
 )
 
 type CreatePostPayload struct {
-	Title   string `json:"title" validate:"required,max=100"`
-	Content string `json:"content" validate:"required,max=1000"`
+	Title   string   `json:"title" validate:"required,max=100"`
+	Content string   `json:"content" validate:"required,max=1000"`
+	Tags    []string `json:"tags"`
 }
 
 func (app *Application) createPostHandler(w http.ResponseWriter, r *http.Request) {
@@ -27,7 +28,8 @@ func (app *Application) createPostHandler(w http.ResponseWriter, r *http.Request
 	post := store.Post{
 		Title:   payload.Title,
 		Content: payload.Content,
-		UserId:  1,
+		Tags:    payload.Tags,
+		UserId:  1, //Change later
 	}
 
 	if err := app.store.Posts.Create(r.Context(), &post); err != nil {
