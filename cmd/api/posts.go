@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 	"socialApp/internal/store"
+	"strconv"
 
 	"github.com/gorilla/mux"
 )
@@ -50,12 +51,25 @@ func (app *Application) getPostHandler(w http.ResponseWriter, r *http.Request) {
 		writeJSONError(w, http.StatusBadRequest, "")
 		return
 	}
-
-	post, err := app.store.Posts.GetById(r.Context(), id)
+	ctx := r.Context()
+	post, err := app.store.Posts.GetById(ctx, id)
 	if err != nil {
 		app.notFound(w, r, err)
 		return
 	}
+
+	idInt, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+	comments, err := app.store.Comments.GetByPostID(ctx, idInt)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	post.Comments = comments
 
 	if err := writeJSON(w, http.StatusOK, post); err != nil {
 		app.internalServerError(w, r, err)
