@@ -32,6 +32,8 @@ func (app *Application) Mount() *mux.Router {
 	mux.HandleFunc("/v1/health", app.HealthCheckHandler).Methods("GET") //curl http://localhost:8080/v1/health
 	mux.HandleFunc("/v1/posts", app.createPostHandler).Methods("POST")
 	mux.HandleFunc("/v1/posts/{id}", app.getPostHandler).Methods("GET")
+	mux.HandleFunc("/v1/posts/{id}", app.deletePostHandler).Methods("DELETE")
+	mux.HandleFunc("/v1/posts/{id}", app.updatePostHandler).Methods("PUT")
 	mux.NewRoute()
 	return mux
 }

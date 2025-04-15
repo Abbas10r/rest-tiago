@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"socialApp/internal/store"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 )
@@ -70,6 +71,65 @@ func (app *Application) getPostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	post.Comments = comments
+
+	if err := writeJSON(w, http.StatusOK, post); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+}
+
+func (app *Application) deletePostHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	if id == "" {
+		writeJSONError(w, http.StatusBadRequest, "")
+		return
+	}
+
+	if err := app.store.Posts.Delete(r.Context(), id); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	if err := writeJSON(w, http.StatusOK, "post deleted"); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+}
+
+func (app *Application) updatePostHandler(w http.ResponseWriter, r *http.Request) {
+	var payload CreatePostPayload
+	if err := readJson(w, r, &payload); err != nil {
+		app.badRequestError(w, r, err)
+		return
+	}
+	if err := Validate.Struct(payload); err != nil {
+		app.badRequestError(w, r, err)
+		return
+	}
+
+	vars := mux.Vars(r)
+	id := vars["id"]
+	if id == "" {
+		writeJSONError(w, http.StatusBadRequest, "")
+		return
+	}
+	ctx := r.Context()
+
+	post, err := app.store.Posts.GetById(ctx, id)
+	if err != nil {
+		app.notFound(w, r, err)
+		return
+	}
+
+	post.Title = payload.Title
+	post.Content = payload.Content
+	post.Tags = payload.Tags
+	post.UpdatedAt = time.Now().UTC().String()
+	if err := app.store.Posts.Update(ctx, &post); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
 
 	if err := writeJSON(w, http.StatusOK, post); err != nil {
 		app.internalServerError(w, r, err)
