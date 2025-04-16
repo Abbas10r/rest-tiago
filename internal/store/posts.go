@@ -47,7 +47,7 @@ func (s *PostStore) Create(ctx context.Context, post *Post) error {
 	return nil
 }
 
-func (s *PostStore) GetById(ctx context.Context, id string) (Post, error) {
+func (s *PostStore) GetById(ctx context.Context, id int64) (Post, error) {
 	query := `
 	SELECT id, user_id, content, title, created_at, tags, updated_at
 	FROM posts
@@ -75,7 +75,7 @@ func (s *PostStore) GetById(ctx context.Context, id string) (Post, error) {
 	return post, nil
 }
 
-func (s *PostStore) Delete(ctx context.Context, id string) error {
+func (s *PostStore) Delete(ctx context.Context, id int64) error {
 	query := `
 		DELETE FROM posts
 		WHERE posts.id = $1

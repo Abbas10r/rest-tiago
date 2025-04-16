@@ -48,11 +48,12 @@ func (app *Application) createPostHandler(w http.ResponseWriter, r *http.Request
 
 func (app *Application) getPostHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	id := vars["id"]
-	if id == "" {
-		writeJSONError(w, http.StatusBadRequest, "")
+	id, err := strconv.ParseInt(vars["id"], 10, 64)
+	if err != nil {
+		app.badRequestError(w, r, err)
 		return
 	}
+
 	ctx := r.Context()
 	post, err := app.store.Posts.GetById(ctx, id)
 	if err != nil {
@@ -60,12 +61,7 @@ func (app *Application) getPostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	idInt, err := strconv.ParseInt(id, 10, 64)
-	if err != nil {
-		app.internalServerError(w, r, err)
-		return
-	}
-	comments, err := app.store.Comments.GetByPostID(ctx, idInt)
+	comments, err := app.store.Comments.GetByPostID(ctx, id)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
@@ -81,9 +77,9 @@ func (app *Application) getPostHandler(w http.ResponseWriter, r *http.Request) {
 
 func (app *Application) deletePostHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	id := vars["id"]
-	if id == "" {
-		writeJSONError(w, http.StatusBadRequest, "")
+	id, err := strconv.ParseInt(vars["id"], 10, 64)
+	if err != nil {
+		app.badRequestError(w, r, err)
 		return
 	}
 
@@ -115,9 +111,9 @@ func (app *Application) updatePostHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	vars := mux.Vars(r)
-	id := vars["id"]
-	if id == "" {
-		writeJSONError(w, http.StatusBadRequest, "")
+	id, err := strconv.ParseInt(vars["id"], 10, 64)
+	if err != nil {
+		app.badRequestError(w, r, err)
 		return
 	}
 	ctx := r.Context()
