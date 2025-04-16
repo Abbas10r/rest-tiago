@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"net/http"
 	"socialApp/internal/store"
 	"strconv"
@@ -87,7 +88,12 @@ func (app *Application) deletePostHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	if err := app.store.Posts.Delete(r.Context(), id); err != nil {
-		app.internalServerError(w, r, err)
+		switch {
+		case errors.Is(err, ErrNotFound):
+			app.notFound(w, r, err)
+		default:
+			app.internalServerError(w, r, err)
+		}
 		return
 	}
 

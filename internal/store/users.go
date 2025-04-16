@@ -39,3 +39,19 @@ func (s *UserStore) Create(ctx context.Context, user *User) error {
 
 	return nil
 }
+
+func (s *UserStore) GetById(ctx context.Context, id string) (User, error) {
+	query := `
+		SELECT u.id, u.username, u.email, u.created_at
+		FROM users u
+		where u.id = $1
+	`
+	var user User
+	err := s.db.QueryRowContext(ctx, query, id).Scan(&user.ID, &user.Username, &user.Email, &user.CreatedAt)
+
+	if err != nil {
+		return User{}, err
+	}
+
+	return user, nil
+}

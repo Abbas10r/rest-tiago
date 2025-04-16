@@ -29,11 +29,17 @@ type dbConfig struct {
 
 func (app *Application) Mount() *mux.Router {
 	mux := mux.NewRouter()
+
 	mux.HandleFunc("/v1/health", app.HealthCheckHandler).Methods("GET") //curl http://localhost:8080/v1/health
-	mux.HandleFunc("/v1/posts", app.createPostHandler).Methods("POST")
-	mux.HandleFunc("/v1/posts/{id}", app.getPostHandler).Methods("GET")
-	mux.HandleFunc("/v1/posts/{id}", app.deletePostHandler).Methods("DELETE")
-	mux.HandleFunc("/v1/posts/{id}", app.updatePostHandler).Methods("PUT")
+
+	p := mux.PathPrefix("/v1/posts").Subrouter()
+	p.HandleFunc("", app.createPostHandler).Methods("POST")
+	p.HandleFunc("/{id}", app.getPostHandler).Methods("GET")
+	p.HandleFunc("/{id}", app.deletePostHandler).Methods("DELETE")
+	p.HandleFunc("/{id}", app.updatePostHandler).Methods("PUT")
+
+	u := mux.PathPrefix("/v1/users").Subrouter()
+	u.HandleFunc("/{id}", app.getUserHandler).Methods("GET")
 	mux.NewRoute()
 	return mux
 }
