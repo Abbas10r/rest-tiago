@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"database/sql"
+	"socialApp/internal/store"
 
 	"github.com/lib/pq"
 )
@@ -88,7 +89,7 @@ func (s *PostStore) Delete(ctx context.Context, id string) error {
 
 	rows, err := res.RowsAffected()
 	if rows == 0 {
-		return err
+		return store.ErrNotFound
 	}
 	return nil
 }

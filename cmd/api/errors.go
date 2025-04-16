@@ -1,16 +1,8 @@
 package main
 
 import (
-	"errors"
 	"log"
 	"net/http"
-	"time"
-)
-
-var (
-	ErrNotFound          = errors.New("resource not found")
-	ErrConflict          = errors.New("resource already exists")
-	QueryTimeoutDuration = time.Second * 5
 )
 
 func (ap *Application) internalServerError(w http.ResponseWriter, r *http.Request, err error) {

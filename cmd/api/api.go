@@ -39,7 +39,10 @@ func (app *Application) Mount() *mux.Router {
 	p.HandleFunc("/{id}", app.updatePostHandler).Methods("PUT")
 
 	u := mux.PathPrefix("/v1/users").Subrouter()
+	u.Use(app.userContextMiddleware)
 	u.HandleFunc("/{id}", app.getUserHandler).Methods("GET")
+	u.HandleFunc("/{id}/follow", app.followUserHandler).Methods("PUT")
+	u.HandleFunc("/{id}/unfollow", app.unfollowUserHandler).Methods("PUT")
 	mux.NewRoute()
 	return mux
 }

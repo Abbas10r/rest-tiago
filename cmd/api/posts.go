@@ -89,7 +89,7 @@ func (app *Application) deletePostHandler(w http.ResponseWriter, r *http.Request
 
 	if err := app.store.Posts.Delete(r.Context(), id); err != nil {
 		switch {
-		case errors.Is(err, ErrNotFound):
+		case errors.Is(err, store.ErrNotFound):
 			app.notFound(w, r, err)
 		default:
 			app.internalServerError(w, r, err)
