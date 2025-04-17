@@ -43,6 +43,9 @@ func (app *Application) Mount() *mux.Router {
 	u.HandleFunc("/{id}", app.getUserHandler).Methods("GET")
 	u.HandleFunc("/{id}/follow", app.followUserHandler).Methods("PUT")
 	u.HandleFunc("/{id}/unfollow", app.unfollowUserHandler).Methods("PUT")
+
+	f := mux.PathPrefix("/v1/feed").Subrouter()
+	f.HandleFunc("", app.getUserFeedHandler).Methods("GET")
 	mux.NewRoute()
 	return mux
 }
