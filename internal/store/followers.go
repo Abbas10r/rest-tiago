@@ -15,15 +15,15 @@ type FollowerStore struct {
 	db *sql.DB
 }
 
-func (s *FollowerStore) Follow(ctx context.Context, followerID, userID int64) error {
+func (s *FollowerStore) Follow(ctx context.Context, followerID, followingUserID int64) error {
 	query := `
-		INSERT INTO followers (user_id, follower_id) VALUES ($1, $2)
+		INSERT INTO followers (following_id, follower_id) VALUES ($1, $2)
 	`
 
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
 
-	_, err := s.db.ExecContext(ctx, query, userID, followerID)
+	_, err := s.db.ExecContext(ctx, query, followingUserID, followerID)
 	if err != nil {
 		return err
 	}
@@ -31,16 +31,16 @@ func (s *FollowerStore) Follow(ctx context.Context, followerID, userID int64) er
 	return nil
 }
 
-func (s *FollowerStore) Unfollow(ctx context.Context, followerID, userID int64) error {
+func (s *FollowerStore) Unfollow(ctx context.Context, followerID, followingUserID int64) error {
 	query := `
 		DELETE FROM followers 
-		WHERE user_id = $1 AND follower_id = $2
+		WHERE following_id = $1 AND follower_id = $2
 	`
 
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
 
-	_, err := s.db.ExecContext(ctx, query, userID, followerID)
+	_, err := s.db.ExecContext(ctx, query, followingUserID, followerID)
 	if err != nil {
 		return err
 	}
