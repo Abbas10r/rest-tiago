@@ -8,6 +8,7 @@ import (
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+	"go.uber.org/zap"
 )
 
 const version = "0.0.2"
@@ -48,6 +49,11 @@ func main() {
 		env: "Development",
 	}
 
+	//Logger
+	logger := zap.Must(zap.NewProduction()).Sugar()
+	defer logger.Sync()
+
+	//Database
 	db, err := db.New(
 		cfg.db.addr,
 		cfg.db.maxOpenConns,
@@ -55,19 +61,20 @@ func main() {
 		cfg.db.maxIdleTime,
 	)
 	if err != nil {
-		log.Panic(err)
+		logger.Fatal(err)
 	}
 
 	defer db.Close()
-	log.Printf("database connection pool established")
+	logger.Info("database connection pool established")
 
 	store := store.NewStorage(db)
 
 	app := &Application{
 		config: cfg,
 		store:  store,
+		logger: logger,
 	}
 
 	mux := app.Mount()
-	log.Fatal(app.Run(mux))
+	logger.Fatal(app.Run(mux))
 }

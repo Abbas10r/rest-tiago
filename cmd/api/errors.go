@@ -1,24 +1,23 @@
 package main
 
 import (
-	"log"
 	"net/http"
 )
 
-func (ap *Application) internalServerError(w http.ResponseWriter, r *http.Request, err error) {
-	log.Printf("internal server error: %s path: %s error: %s", r.Method, r.URL.Path, err)
+func (app *Application) internalServerError(w http.ResponseWriter, r *http.Request, err error) {
+	app.logger.Errorw("internal server error", "method", r.Method, "path", r.URL.Path, "error", err.Error())
 
 	writeJSONError(w, http.StatusInternalServerError, "the server encountered a problem")
 }
 
-func (ap *Application) badRequestError(w http.ResponseWriter, r *http.Request, err error) {
-	log.Printf("bad request: %s path: %s error: %s", r.Method, r.URL.Path, err)
+func (app *Application) badRequestError(w http.ResponseWriter, r *http.Request, err error) {
+	app.logger.Warnf("bad request", "method", r.Method, "path", r.URL.Path, "error", err.Error())
 
 	writeJSONError(w, http.StatusBadRequest, err.Error())
 }
 
-func (ap *Application) notFound(w http.ResponseWriter, r *http.Request, err error) {
-	log.Printf("not found: %s path: %s error: %s", r.Method, r.URL.Path, err)
+func (app *Application) notFound(w http.ResponseWriter, r *http.Request, err error) {
+	app.logger.Warnf("not found", "method", r.Method, "path", r.URL.Path, "error", err.Error())
 
 	writeJSONError(w, http.StatusNotFound, "not found error")
 }
