@@ -1,12 +1,15 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	"socialApp/cmd/api/docs"
 	"socialApp/internal/store"
 	"time"
 
 	"github.com/gorilla/mux"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 type Application struct {
@@ -15,9 +18,10 @@ type Application struct {
 }
 
 type Config struct {
-	addr string
-	db   dbConfig
-	env  string
+	addr   string
+	db     dbConfig
+	env    string
+	apiURL string
 }
 
 type dbConfig struct {
@@ -29,7 +33,9 @@ type dbConfig struct {
 
 func (app *Application) Mount() *mux.Router {
 	mux := mux.NewRouter()
-
+	docsURL := fmt.Sprintf("%s/swagger/doc.json", app.config.addr)
+	mux.PathPrefix("/swagger/").Handler(httpSwagger.Handler(
+		httpSwagger.URL(docsURL))).Methods(http.MethodGet)
 	mux.HandleFunc("/v1/health", app.HealthCheckHandler).Methods("GET") //curl http://localhost:8080/v1/health
 
 	p := mux.PathPrefix("/v1/posts").Subrouter()
@@ -39,19 +45,24 @@ func (app *Application) Mount() *mux.Router {
 	p.HandleFunc("/{id}", app.updatePostHandler).Methods("PUT")
 
 	u := mux.PathPrefix("/v1/users").Subrouter()
-	u.Use(app.userContextMiddleware)
 	u.HandleFunc("/{id}", app.getUserHandler).Methods("GET")
-	u.HandleFunc("/{id}/follow", app.followUserHandler).Methods("PUT")
-	u.HandleFunc("/{id}/unfollow", app.unfollowUserHandler).Methods("PUT")
 
-	f := mux.PathPrefix("/v1/feed").Subrouter()
-	f.HandleFunc("", app.getUserFeedHandler).Methods("GET")
+	f := mux.PathPrefix("/v1/users/{id}").Subrouter()
+	f.Use(app.userContextMiddleware)
+	f.HandleFunc("/follow", app.followUserHandler).Methods("PUT")
+	f.HandleFunc("/unfollow", app.unfollowUserHandler).Methods("PUT")
+
+	feed := mux.PathPrefix("/v1/feed").Subrouter()
+	feed.HandleFunc("", app.getUserFeedHandler).Methods("GET")
 	mux.NewRoute()
 	return mux
 }
 
 func (app *Application) Run(mux *mux.Router) error {
-
+	// Docs
+	docs.SwaggerInfo.Version = version
+	docs.SwaggerInfo.Host = app.config.apiURL
+	docs.SwaggerInfo.BasePath = "/v1"
 	srv := &http.Server{
 		Addr:         app.config.addr,
 		Handler:      mux,
