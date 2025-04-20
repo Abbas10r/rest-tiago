@@ -24,6 +24,11 @@ type Config struct {
 	db     dbConfig
 	env    string
 	apiURL string
+	mail   mailConfig
+}
+
+type mailConfig struct {
+	exp time.Duration
 }
 
 type dbConfig struct {
@@ -56,6 +61,8 @@ func (app *Application) Mount() *mux.Router {
 
 	feed := mux.PathPrefix("/v1/feed").Subrouter()
 	feed.HandleFunc("", app.getUserFeedHandler).Methods("GET")
+
+	mux.HandleFunc("/authentication/user", app.registerUserHandler).Methods("Post")
 	mux.NewRoute()
 	return mux
 }

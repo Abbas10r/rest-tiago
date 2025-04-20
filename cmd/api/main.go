@@ -5,6 +5,7 @@ import (
 	"os"
 	"socialApp/internal/store"
 	"socialApp/internal/store/db"
+	"time"
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -25,7 +26,7 @@ const version = "0.0.2"
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 
 // @host petstore.swagger.io
-// @BasePath /v1
+// @BasePath
 //
 // @securityDefinitions.apikey  ApiKeyAuth
 // @in 				header
@@ -47,6 +48,9 @@ func main() {
 			maxIdleTime:  "15m",
 		},
 		env: "Development",
+		mail: mailConfig{
+			exp: time.Hour * 24 * 3, //3 days
+		},
 	}
 
 	//Logger
