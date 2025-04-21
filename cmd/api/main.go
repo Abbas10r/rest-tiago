@@ -26,7 +26,7 @@ const version = "0.0.2"
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 
 // @host petstore.swagger.io
-// @BasePath
+// @BasePath	/
 //
 // @securityDefinitions.apikey  ApiKeyAuth
 // @in 				header

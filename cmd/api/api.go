@@ -62,7 +62,8 @@ func (app *Application) Mount() *mux.Router {
 	feed := mux.PathPrefix("/v1/feed").Subrouter()
 	feed.HandleFunc("", app.getUserFeedHandler).Methods("GET")
 
-	mux.HandleFunc("/authentication/user", app.registerUserHandler).Methods("Post")
+	mux.HandleFunc("/authentication/user", app.registerUserHandler).Methods("POST")
+	mux.HandleFunc("/users/activate/{token}", app.activateUserHandler).Methods("PUT")
 	mux.NewRoute()
 	return mux
 }

@@ -15,6 +15,11 @@ type RegisterUserPayload struct {
 	Password string `json:"password" validate="required,min=3,max=72"`
 }
 
+type UserWithToken struct {
+	*store.User
+	Token string `json:"token"`
+}
+
 // registerUserHandler godoc
 //
 //	@Summary		Registers a user
@@ -23,7 +28,7 @@ type RegisterUserPayload struct {
 //	@Accept			json
 //	@Produce		json
 //	@Param			payload	body		RegisterUserPayload	true	"User credentials"
-//	@Success		201
+//	@Success		201     {object} 	UserWithToken
 //	@Failure		400		{object}	error
 //	@Failure		500		{object}	error
 //	@Router			/authentication/user [post]
@@ -54,7 +59,7 @@ func (app *Application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 
 	plainToken := uuid.New().String()
 	// hash the token for storage but keep the plainToken for email
-	hash := sha256.Sum256([]byte(plainToken))
+	hash := sha256.Sum256([]byte(plainToken)) // Actually no need for hashing token, its not a password
 	hashToken := hex.EncodeToString(hash[:])
 
 	err := app.store.Users.CreateAndInvite(ctx, user, hashToken, app.config.mail.exp)
@@ -62,7 +67,13 @@ func (app *Application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		app.internalServerError(w, r, err)
 		return
 	}
-	if err := writeJSON(w, http.StatusCreated, nil); err != nil {
+
+	userWithToken := UserWithToken{
+		User:  user,
+		Token: plainToken,
+	}
+
+	if err := writeJSON(w, http.StatusCreated, userWithToken); err != nil {
 		app.internalServerError(w, r, err)
 	}
 }
