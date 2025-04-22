@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"socialApp/internal/mailer"
 	"socialApp/internal/store"
 	"socialApp/internal/store/db"
 	"time"
@@ -40,16 +41,21 @@ func main() {
 	}
 
 	cfg := Config{
-		addr: ":8080",
+		addr:        ":8080",
+		frontendURL: os.Getenv("FRONTEND_URL"),
 		db: dbConfig{
 			addr:         os.Getenv("DB_CONN"),
 			maxOpenConns: 30,
 			maxIdleConns: 30,
 			maxIdleTime:  "15m",
 		},
-		env: "Development",
+		env: "production",
 		mail: mailConfig{
 			exp: time.Hour * 24 * 3, //3 days
+			sendGrid: sendGridConfig{
+				apiKey: os.Getenv("SENDGRID_API_KEY"),
+			},
+			fromEmail: os.Getenv("FROM_EMAIL"),
 		},
 	}
 
@@ -72,11 +78,12 @@ func main() {
 	logger.Info("database connection pool established")
 
 	store := store.NewStorage(db)
-
+	mailer := mailer.NewSendgrid(cfg.mail.sendGrid.apiKey, cfg.mail.fromEmail)
 	app := &Application{
 		config: cfg,
 		store:  store,
 		logger: logger,
+		mailer: mailer,
 	}
 
 	mux := app.Mount()
