@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"socialApp/internal/auth"
 	"socialApp/internal/mailer"
 	"socialApp/internal/store"
 	"socialApp/internal/store/db"
@@ -57,6 +58,13 @@ func main() {
 			},
 			fromEmail: os.Getenv("FROM_EMAIL"),
 		},
+		auth: authConfig{
+			token: tokenConfig{
+				secret: "secret",
+				exp:    time.Hour * 24 * 3, // 3 days
+				iss:    "gophersocial",
+			},
+		},
 	}
 
 	//Logger
@@ -79,11 +87,14 @@ func main() {
 
 	store := store.NewStorage(db)
 	mailer := mailer.NewSendgrid(cfg.mail.sendGrid.apiKey, cfg.mail.fromEmail)
+	JWTAuthenticator := auth.NewJWTAuthenticator(cfg.auth.token.secret, cfg.auth.token.iss, cfg.auth.token.iss)
+
 	app := &Application{
-		config: cfg,
-		store:  store,
-		logger: logger,
-		mailer: mailer,
+		config:        cfg,
+		store:         store,
+		logger:        logger,
+		mailer:        mailer,
+		authenticator: JWTAuthenticator,
 	}
 
 	mux := app.Mount()

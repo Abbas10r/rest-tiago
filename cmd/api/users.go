@@ -1,8 +1,6 @@
 package main
 
 import (
-	"context"
-	"errors"
 	"net/http"
 	"socialApp/internal/store"
 	"strconv"
@@ -49,10 +47,6 @@ func (app *Application) getUserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type FollowerUser struct {
-	UserID int64 `json:"following_user_id"`
-}
-
 // FollowUser godoc
 //
 // @Summary Follows a user
@@ -67,16 +61,16 @@ type FollowerUser struct {
 // @Router /users/{id}/follow [put]
 func (app *Application) followUserHandler(w http.ResponseWriter, r *http.Request) {
 	followerUser := getUserFromContext(r)
-
-	var followingUser FollowerUser
-	if err := readJson(w, r, &followingUser); err != nil {
+	vars := mux.Vars(r)
+	folowedId, err := strconv.ParseInt(vars["userID"], 10, 64)
+	if err != nil {
 		app.badRequestError(w, r, err)
 		return
 	}
 
 	ctx := r.Context()
 
-	if err := app.store.Followers.Follow(ctx, followerUser.ID, followingUser.UserID); err != nil {
+	if err := app.store.Followers.Follow(ctx, followerUser.ID, folowedId); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
@@ -90,15 +84,15 @@ func (app *Application) followUserHandler(w http.ResponseWriter, r *http.Request
 func (app *Application) unfollowUserHandler(w http.ResponseWriter, r *http.Request) {
 	followerUser := getUserFromContext(r)
 
-	var followingUser FollowerUser
-	if err := readJson(w, r, &followingUser); err != nil {
+	vars := mux.Vars(r)
+	unfolowedId, err := strconv.ParseInt(vars["userID"], 10, 64)
+	if err != nil {
 		app.badRequestError(w, r, err)
 		return
 	}
 
 	ctx := r.Context()
-
-	if err := app.store.Followers.Unfollow(ctx, followerUser.ID, followingUser.UserID); err != nil {
+	if err := app.store.Followers.Unfollow(ctx, followerUser.ID, unfolowedId); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
@@ -139,33 +133,6 @@ func (app *Application) activateUserHandler(w http.ResponseWriter, r *http.Reque
 	if err := writeJSON(w, http.StatusNoContent, ""); err != nil {
 		app.internalServerError(w, r, err)
 	}
-}
-
-func (app *Application) userContextMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		id, err := strconv.ParseInt(vars["id"], 10, 64)
-		if err != nil {
-			app.badRequestError(w, r, err)
-			return
-		}
-
-		ctx := r.Context()
-		user, err := app.store.Users.GetById(ctx, id)
-		if err != nil {
-			switch {
-			case errors.Is(err, store.ErrNotFound):
-				app.notFound(w, r, err)
-				return
-			default:
-				app.internalServerError(w, r, err)
-				return
-			}
-		}
-
-		ctx = context.WithValue(ctx, userCtx, user)
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
 }
 
 func getUserFromContext(r *http.Request) store.User {

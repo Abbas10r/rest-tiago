@@ -28,11 +28,13 @@ func (app *Application) createPostHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	user := getUserFromContext(r)
+
 	post := store.Post{
 		Title:   payload.Title,
 		Content: payload.Content,
 		Tags:    payload.Tags,
-		UserId:  1, //Change later
+		UserId:  user.ID,
 	}
 
 	if err := app.store.Posts.Create(r.Context(), &post); err != nil {
