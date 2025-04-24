@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"socialApp/internal/store"
@@ -9,6 +10,10 @@ import (
 
 	"github.com/gorilla/mux"
 )
+
+type postKey string
+
+const postCtx postKey = "post"
 
 type CreatePostPayload struct {
 	Title   string   `json:"title" validate:"required,max=100"`
@@ -49,21 +54,9 @@ func (app *Application) createPostHandler(w http.ResponseWriter, r *http.Request
 }
 
 func (app *Application) getPostHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id, err := strconv.ParseInt(vars["id"], 10, 64)
-	if err != nil {
-		app.badRequestError(w, r, err)
-		return
-	}
+	post := getPostFromCtx(r)
 
-	ctx := r.Context()
-	post, err := app.store.Posts.GetById(ctx, id)
-	if err != nil {
-		app.notFound(w, r, err)
-		return
-	}
-
-	comments, err := app.store.Comments.GetByPostID(ctx, id)
+	comments, err := app.store.Comments.GetByPostID(r.Context(), post.ID)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
@@ -102,6 +95,8 @@ func (app *Application) deletePostHandler(w http.ResponseWriter, r *http.Request
 }
 
 func (app *Application) updatePostHandler(w http.ResponseWriter, r *http.Request) {
+	post := getPostFromCtx(r)
+
 	var payload CreatePostPayload
 	if err := readJson(w, r, &payload); err != nil {
 		app.badRequestError(w, r, err)
@@ -112,19 +107,7 @@ func (app *Application) updatePostHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	vars := mux.Vars(r)
-	id, err := strconv.ParseInt(vars["id"], 10, 64)
-	if err != nil {
-		app.badRequestError(w, r, err)
-		return
-	}
 	ctx := r.Context()
-
-	post, err := app.store.Posts.GetById(ctx, id)
-	if err != nil {
-		app.notFound(w, r, err)
-		return
-	}
 
 	post.Title = payload.Title
 	post.Content = payload.Content
@@ -139,4 +122,36 @@ func (app *Application) updatePostHandler(w http.ResponseWriter, r *http.Request
 		app.internalServerError(w, r, err)
 		return
 	}
+}
+
+func (app *Application) postsContextMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		id, err := strconv.ParseInt(vars["id"], 10, 64)
+		if err != nil {
+			app.badRequestError(w, r, err)
+			return
+		}
+
+		ctx := r.Context()
+
+		post, err := app.store.Posts.GetById(ctx, id)
+		if err != nil {
+			switch {
+			case errors.Is(err, store.ErrNotFound):
+				app.notFound(w, r, err)
+			default:
+				app.internalServerError(w, r, err)
+			}
+			return
+		}
+
+		ctx = context.WithValue(ctx, postCtx, post)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func getPostFromCtx(r *http.Request) store.Post {
+	post, _ := r.Context().Value(postCtx).(store.Post)
+	return post
 }

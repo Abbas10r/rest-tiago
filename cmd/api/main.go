@@ -61,7 +61,7 @@ func main() {
 		auth: authConfig{
 			token: tokenConfig{
 				secret: "secret",
-				exp:    time.Hour * 24 * 3, // 3 days
+				exp:    time.Minute * 39, // 30 min
 				iss:    "gophersocial",
 			},
 		},

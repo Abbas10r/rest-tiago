@@ -62,19 +62,27 @@ type dbConfig struct {
 
 func (app *Application) Mount() *mux.Router {
 	mux := mux.NewRouter()
+
 	docsURL := fmt.Sprintf("%s/swagger/doc.json", app.config.addr)
 	mux.PathPrefix("/swagger/").Handler(httpSwagger.Handler(
 		httpSwagger.URL(docsURL))).Methods(http.MethodGet)
 
 	healthRouter := mux.PathPrefix("/v1/health").Subrouter()
+	healthRouter.Use(app.AuthTokenAuthMiddleware)
 	healthRouter.HandleFunc("", app.HealthCheckHandler).Methods("GET") //curl http://localhost:8080/v1/health
 
 	p := mux.PathPrefix("/v1/posts").Subrouter()
 	p.Use(app.AuthTokenAuthMiddleware)
 	p.HandleFunc("", app.createPostHandler).Methods("POST")
-	p.HandleFunc("/{id}", app.getPostHandler).Methods("GET")
-	p.HandleFunc("/{id}", app.deletePostHandler).Methods("DELETE")
-	p.HandleFunc("/{id}", app.updatePostHandler).Methods("PUT")
+	p2 := p.PathPrefix("").Subrouter()
+	p2.Use(app.postsContextMiddleware)
+	p2.HandleFunc("/{id}", app.getPostHandler).Methods("GET")
+
+	p3 := p2.PathPrefix("/{id}").Subrouter()
+	deleteHandler := app.checkPostOwnership("admin", http.HandlerFunc(app.deletePostHandler))
+	p3.Handle("", deleteHandler).Methods("DELETE")
+	updateHandler := app.checkPostOwnership("moderator", http.HandlerFunc(app.updatePostHandler))
+	p3.Handle("", updateHandler).Methods("PUT")
 
 	u := mux.PathPrefix("/v1/users").Subrouter()
 	u.Use(app.AuthTokenAuthMiddleware)
@@ -86,6 +94,7 @@ func (app *Application) Mount() *mux.Router {
 	f.HandleFunc("/unfollow", app.unfollowUserHandler).Methods("PUT")
 
 	feed := mux.PathPrefix("/v1/feed").Subrouter()
+	feed.Use(app.AuthTokenAuthMiddleware)
 	feed.HandleFunc("", app.getUserFeedHandler).Methods("GET")
 
 	mux.HandleFunc("/users/activate/{token}", app.activateUserHandler).Methods("PUT")
