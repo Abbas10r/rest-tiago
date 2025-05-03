@@ -9,3 +9,10 @@ tasks:
   up:
     cmds:
       - docker-compose up --build
+
+  addmig:
+    dir: cmd/migrate/migrations
+    vars:
+      MIG: '{{default "migration" .MIG}}'
+    cmds:
+      - goose -s create {{.MIG}} sql
