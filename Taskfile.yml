@@ -1,0 +1,11 @@
+version: '3'
+
+tasks:
+  run:
+    dir: cmd/api
+    cmds: 
+      - go run .
+
+  up:
+    cmds:
+      - docker-compose up --build
